@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Watchdog;
-
+import edu.wpi.first.wpilibj.Encoder;
 /**
  * The VM is configured to automatically run this class, and to call the
  * functions corresponding to each mode, as described in the IterativeRobot
@@ -22,9 +22,12 @@ import edu.wpi.first.wpilibj.Watchdog;
  */
 public class TPARobot extends IterativeRobot {
    
-    RobotDrive theRobotDrive;   // Robot Drive Variable
-    Joystick theRightStick;     // Right joystick
-    Joystick theLeftStick;      // Left joystick
+    RobotDrive theRobotDrive;                   // Robot Drive Variable
+    Joystick theRightStick;                     // Right joystick
+    Joystick theLeftStick;                      // Left joystick
+    Encoder theRightEncoder;                    // Right E4P Motion Sensor
+    Encoder theLeftEncoder;                     // Left E4P Motion Sensor
+    static final double STOP_VALUE = 0.1;      // The max of the range recognized as zero
     
     // Drive mode selection
     int theDriveMode;                           // The actual drive mode that is currently selected.
@@ -51,6 +54,10 @@ public class TPARobot extends IterativeRobot {
         
         // Initialize the Drive Mode to Uninitialized
         theDriveMode = UNINITIALIZED_DRIVE;
+        
+        // Defines two E4P Motion Sensors at ports 1,2,3,4
+        theLeftEncoder = new Encoder(1,2);
+        theRightEncoder = new Encoder(3,4);
     }
     /*--------------------------------------------------------------------------*/
     
@@ -80,9 +87,8 @@ public class TPARobot extends IterativeRobot {
         
         // feed the user watchdog at every period when in autonomous
         Watchdog.getInstance().feed();
-        
         setDriveMode();
-        
+        brakeOnNeutral();
     }
     
     /*--------------------------------------------------------------------------*/
@@ -118,4 +124,81 @@ public class TPARobot extends IterativeRobot {
     }
     /*--------------------------------------------------------------------------*/
     
+    /*--------------------------------------------------------------------------*/
+    /*
+     * Author:  Marissa Beene
+     * Date:    10/30/2011 (Marissa Beene)
+     * Purpose: To use the motors to brake the robot. Takes the speed from the 
+     *          each motor and sends the reverse signal back.
+     * Inputs:  Double aSpeedRight - the speed of the right motor
+     *          Double aSpeedLeft - the speed of the left motor
+     * Outputs: None
+     */
+    
+    public void brake(double aSpeedLeft, double aSpeedRight){
+        theRobotDrive.tankDrive(-aSpeedLeft, -aSpeedRight); //drive the robot at opposite values
+        }
+    /*--------------------------------------------------------------------------*/
+    
+    
+    /*--------------------------------------------------------------------------*/
+    
+    /*
+     * Author:  Marissa Beene
+     * Date:    10/30/11
+     * Purpose: To determine if there is no signal in arcade mode. If there is no 
+     *          signal on the joystick, it will return true, otherwise, it will 
+     *          return false.
+     * Inputs:  Joystick aStick  - the driving joystick
+     * Outputs: Boolean - returns true if the joystick is not sending a signal
+     */
+    
+    public boolean isNeutral(Joystick aStick){
+        if(aStick.getY() == 0 && aStick.getX() == 0){ //there is no input
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+    /*--------------------------------------------------------------------------*/
+    
+    
+    /*--------------------------------------------------------------------------*/
+    
+    /*
+     * Author:  Marissa Beene
+     * Date:    11/5/11
+     * Purpose: To brake the robot if there is no signal in arcade mode. If the 
+     *          wheel is not considered stopped, it will read the direction that the wheel
+     *          is turning and send it the stop value in the other direction.
+     * Inputs:  None
+     * Outputs: None
+     */
+    
+    public void brakeOnNeutral(){
+        double theLeftSpeedOutput = 0;
+        double theRightSpeedOutput = 0;
+        if(isNeutral(theRightStick)){
+            if(!theLeftEncoder.getStopped()){
+                if(theLeftEncoder.getDirection()){
+                    theLeftSpeedOutput = STOP_VALUE;
+                }
+                else{
+                    theLeftSpeedOutput = -STOP_VALUE;
+                }
+            }
+            if(!theRightEncoder.getStopped()){
+                if(theRightEncoder.getDirection()){
+                    theRightSpeedOutput = STOP_VALUE;
+                }
+                else{
+                    theRightSpeedOutput = -STOP_VALUE;
+                }
+            }
+        brake(theLeftSpeedOutput, theRightSpeedOutput);
+        }
+    }
+    
+    /*--------------------------------------------------------------------------*/
 }
