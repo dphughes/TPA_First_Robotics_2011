@@ -91,7 +91,16 @@ public class TPARobot extends IterativeRobot {
         if (isNeutral(theRightStick)){  // If no signal
             brake(theLeftPWM.getSpeed(), theRightPWM.getSpeed()); // Brake the Robot
         }
-        
+		if (theRightStick.getZ() > 0) { 
+		/*This Z-Value (0) is temporary since I was not able to 
+		  find/obtain any information on the range of Z-Values of the Z-Axis*/
+			SlowSpeedMode(theLeftPWM,theRightPWM);
+		}
+		if (theRightStick.getZ() == 0) {
+		/*This Z-Value (0) is temporary since I was not able to 
+		  find/obtain any information on the range of Z-Values of the Z-Axis*/
+			MediumSpeedMode(theLeftPWM,theRightPWM);
+        }
         
         
     }
@@ -166,4 +175,53 @@ public class TPARobot extends IterativeRobot {
         }
     }
     /*--------------------------------------------------------------------------*/
+	
+	
+	/* ----------------------------------------------------------------------------------------------*/
+	/* Author:   Sumbhav Sethia
+	 * Date:     11/03/2011 (Sumbhav Sethia)
+	 * Function: MediumSpeedMode
+	 * Purpose:  To set the max speed in either dircetion 
+	 *           to approximately two-thirds the robot's maximum speed.
+	 * Inputs:   aPWMLeft, aPWNRight - The PWM machines attached to the motors
+     * Outputs:  None
+	*/
+	 public void MediumSpeedMode (PWM aPWMLeft, PWM aPWMRight) {
+		aPWMLeft.setBounds (213,129,128,127,85);
+        aPWMRight.setBounds (213,129,128,127,85);		
+		/*Sets the max speed, deadband max, center speed(off speed), deadband min, 
+		and minimum speed respectively. Apparently, the speed can also be as an
+		integer between 0 and 255, with 0 being off, 1-127 being reverse, 
+		128 being neutral, and 128-255 being forward. I am not sure about whether 
+		my deadband numbers work or not, or whether a deadband is absolutely necessary, 
+		but Daniel can help with that. A deadband is basically a point at which no action occurs,
+		or there is no voltage.
+		Here is the location of the setBounds method:
+			Inside FRC Classes Folder, then doc/javadoc/edu/wpi/first/wpilibj/PWM */
+	 }
+	/*----------------------------------------------------------------------------------------------*/
+	 
+	/* ----------------------------------------------------------------------------------------------*/
+	/* Author:   Sumbhav Sethia
+	 * Date:     11/03/2011 (Sumbhav Sethia)
+	 * Function: SlowSpeedMode
+	 * Purpose:  To set the max speed in either dircetion 
+	 *           to approximately one-third the robot's maximum speed.
+	 * Inputs:   aPWMLeft, aPWNRight - The PWM machines attached to the motors
+	 * Outputs:  None
+	 */
+	 public void SlowSpeedMode (PWM aPWMLeft, PWM aPWMRight) {
+		aPWMLeft.setBounds (171,129,128,127,43);
+		aPWMRight.setBounds (171,129,128,127,43);
+		/*Sets the max speed, deadband max, center speed(off speed), deadband min, 
+		and minimum speed respectively. Apparently, the speed can also be as an
+		integer between 0 and 255, with 0 being off, 1-127 being reverse, 
+		128 being neutral, and 128-255 being forward. I am not sure about whether 
+		my deadband numbers work or not, or whether a deadband is absolutely necessary, 
+		but Daniel can help with that. A deadband is basically a point at which no action occurs,
+		or there is no voltage.
+		Here is the location of the setBounds method:
+			Inside FRC Classes Folder, then doc/javadoc/edu/wpi/first/wpilibj/PWM */
+	 }
+	/*----------------------------------------------------------------------------------------------*/
 }
