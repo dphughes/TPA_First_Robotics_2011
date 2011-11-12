@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Copyright (c) FIRST 2008. All Rights Reserved.                             */
+/* Copyright (c) FIRST 2008. All Rights Re  Aserved.                             */
 /* Open Source Software - may be modified and shared by FRC teams. The code   */
 /* must be accompanied by the FIRST BSD license file in the root directory of */
 /* the project.                                                               */
@@ -45,19 +45,6 @@ public class TPARobot extends IterativeRobot {
      */
     public void TPARobot(){
         
-        // Create a robot using standard right/left robot drive on PWMS 1 and 2
-        theRobotDrive = new RobotDrive(1,2);
-        
-        // Define joysticks being used at USB port #1 and USB port #2 on the Drivers Station
-	theRightStick = new Joystick(1);
-	theLeftStick = new Joystick(2);
-        
-        // Initialize the Drive Mode to Uninitialized
-        theDriveMode = UNINITIALIZED_DRIVE;
-        
-        // Defines two E4P Motion Sensors at ports 1,2,3,4
-        theLeftEncoder = new Encoder(1,2);
-        theRightEncoder = new Encoder(3,4);
     }
     /*--------------------------------------------------------------------------*/
     
@@ -66,8 +53,20 @@ public class TPARobot extends IterativeRobot {
      * used for any initialization code.
      */
     public void robotInit() {
-        // Actions which would be performed once (and only once) upon initialization of the
-	// robot would be put here.
+        // Create a robot using standard right/left robot drive on PWMS 1 and 2
+        theRobotDrive = new RobotDrive(1,2);
+        System.out.println("TheRobotDrive constructed successfully");
+        // Define joysticks being used at USB port #1 and USB port #2 on the Drivers Station
+	theRightStick = new Joystick(1);
+	theLeftStick = new Joystick(2);
+        System.out.println("The Joysticks constructed successfully");
+        // Initialize the Drive Mode to Uninitialized
+        theDriveMode = UNINITIALIZED_DRIVE;
+        
+        // Defines two E4P Motion Sensors at ports 1,2,3,4
+        theLeftEncoder = new Encoder(1,2);
+        theRightEncoder = new Encoder(3,4);
+        System.out.println("The Encoders constructed successfully");
 
 	System.out.println("RobotInit() completed.\n");
     }
@@ -87,10 +86,15 @@ public class TPARobot extends IterativeRobot {
         
         // feed the user watchdog at every period when in autonomous
         Watchdog.getInstance().feed();
+        System.out.println("teleop Periodic Watchdog Fed");
         setDriveMode();
+        System.out.println("Set Drive Mode called");
         brakeOnNeutral();
+        System.out.println("Set brakeOnNeutral called");
+        
+        
     }
-    
+   
     /*--------------------------------------------------------------------------*/
     /*
      * Author:  Daniel Hughes
@@ -106,6 +110,7 @@ public class TPARobot extends IterativeRobot {
         // determine if tank or arcade mode, based upon position of "Z" wheel on kit joystick
         if (theRightStick.getZ() <= 0) {    // Logitech Attack3 has z-polarity reversed; up is negative
             // use arcade drive
+            System.out.println("theRightStick.getZ called" );
             theRobotDrive.arcadeDrive(theRightStick, false);	// drive with arcade style (use right stick)
             if (theDriveMode != ARCADE_DRIVE) {
                 // if newly entered arcade drive, print out a message
@@ -123,7 +128,7 @@ public class TPARobot extends IterativeRobot {
         }
     }
     /*--------------------------------------------------------------------------*/
-    
+   
     /*--------------------------------------------------------------------------*/
     /*
      * Author:  Marissa Beene
@@ -146,20 +151,38 @@ public class TPARobot extends IterativeRobot {
     /*
      * Author:  Marissa Beene
      * Date:    10/30/11
-     * Purpose: To determine if there is no signal in arcade mode. If there is no 
-     *          signal on the joystick, it will return true, otherwise, it will 
-     *          return false.
-     * Inputs:  Joystick aStick  - the driving joystick
-     * Outputs: Boolean - returns true if the joystick is not sending a signal
+     * Purpose: To determine if there is no signal. First determines the drive
+     *          mode and discards the left stick if in arcade mode. If there is 
+     *          no signal to the drive train, it will return true, otherwise it 
+     *          will return false
+     * Inputs:  Joystick aRightStick  - the right joystick
+     *          Joystick aLeftStick - the left joystick
+     * Outputs: Boolean - returns true if the drive train is not sent a signal
      */
     
-    public boolean isNeutral(Joystick aStick){
-        if(aStick.getY() == 0 && aStick.getX() == 0){ //there is no input
-            return true;
+    public boolean isNeutral(Joystick aRightStick, Joystick aLeftStick){
+        System.out.println("isNeutral Called");
+        if(theDriveMode == ARCADE_DRIVE){ //if arcade drive
+            System.out.println("In Arcade Mode");
+            if(aRightStick.getY() == 0 && aRightStick.getX() == 0){ //there is no input
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+        else if(theDriveMode == TANK_DRIVE){ //if tank drive
+            System.out.println("In Tank Drive");
+            if(aRightStick.getY() == 0 && aLeftStick.getY() == 0){
+                return true;
+            }
+            else{
+                return false;
+            }
         }
         else{
             return false;
-        }
+        } 
     }
     /*--------------------------------------------------------------------------*/
     
@@ -179,7 +202,8 @@ public class TPARobot extends IterativeRobot {
     public void brakeOnNeutral(){
         double theLeftSpeedOutput = 0;
         double theRightSpeedOutput = 0;
-        if(isNeutral(theRightStick)){
+        System.out.println("Brake on neutral called");
+        if(isNeutral(theRightStick, theLeftStick)){
             if(!theLeftEncoder.getStopped()){
                 if(theLeftEncoder.getDirection()){
                     theLeftSpeedOutput = STOP_VALUE;
