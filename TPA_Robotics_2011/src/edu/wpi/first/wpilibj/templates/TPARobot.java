@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Copyright (c) FIRST 2008. All Rights Re  Aserved.                             */
+/* Copyright (c) FIRST 2008. All Rights Reserved.                             */
 /* Open Source Software - may be modified and shared by FRC teams. The code   */
 /* must be accompanied by the FIRST BSD license file in the root directory of */
 /* the project.                                                               */
@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Watchdog;
 import edu.wpi.first.wpilibj.Encoder;
+
 /**
  * The VM is configured to automatically run this class, and to call the
  * functions corresponding to each mode, as described in the IterativeRobot
@@ -20,6 +21,7 @@ import edu.wpi.first.wpilibj.Encoder;
  * creating this project, you must also update the manifest file in the resource
  * directory.
  */
+
 public class TPARobot extends IterativeRobot {
    
     RobotDrive theRobotDrive;                   // Robot Drive Variable
@@ -27,7 +29,8 @@ public class TPARobot extends IterativeRobot {
     Joystick theLeftStick;                      // Left joystick
     Encoder theRightEncoder;                    // Right E4P Motion Sensor
     Encoder theLeftEncoder;                     // Left E4P Motion Sensor
-    static final double STOP_VALUE = 0.1;      // The max of the range recognized as zero
+    static final boolean DEBUG = false;         // Debug Trigger
+    static final double STOP_VALUE = 0.1;       // The max of the range recognized as zero
     
     // Drive mode selection
     int theDriveMode;                           // The actual drive mode that is currently selected.
@@ -49,26 +52,42 @@ public class TPARobot extends IterativeRobot {
     /*--------------------------------------------------------------------------*/
     
     /*
-     * This function is run when the robot is first started up and should be
-     * used for any initialization code.
+     * Author:  Daniel Hughes
+     * Date:    11/12/2011
+     * Purpose: Robot Initialization Function. This function is run once when the
+     *          robot is first started up and should be used for any initialization
+     *          code.
+     * Inputs:  None
+     * Outputs: None
      */
+
     public void robotInit() {
-        // Create a robot using standard right/left robot drive on PWMS 1 and 2
+        // Create a drive system using standard right/left robot drive on PWMS 1 and 2
         theRobotDrive = new RobotDrive(1,2);
-        System.out.println("TheRobotDrive constructed successfully");
+        if (DEBUG == true){
+            System.out.println("TheRobotDrive constructed successfully");
+        }
+        
         // Define joysticks being used at USB port #1 and USB port #2 on the Drivers Station
 	theRightStick = new Joystick(1);
 	theLeftStick = new Joystick(2);
-        System.out.println("The Joysticks constructed successfully");
+        if (DEBUG == true){
+           System.out.println("The Joysticks constructed successfully"); 
+        }
+        
         // Initialize the Drive Mode to Uninitialized
         theDriveMode = UNINITIALIZED_DRIVE;
         
-        // Defines two E4P Motion Sensors at ports 1,2,3,4
+        // Defines two E4P Motion Sensors at ports 1,2,3, and 4
         theLeftEncoder = new Encoder(1,2);
         theRightEncoder = new Encoder(3,4);
-        System.out.println("The Encoders constructed successfully");
+        if (DEBUG == true){
+            System.out.println("The Encoders constructed successfully");
+        }
 
+        if (DEBUG == true){
 	System.out.println("RobotInit() completed.\n");
+        }
     }
 
     /**
@@ -79,20 +98,33 @@ public class TPARobot extends IterativeRobot {
 	Watchdog.getInstance().feed();
     }
 
-    /**
-     * This function is called periodically during operator control
+    /*
+     * Author:  Team
+     * Date:    11/12/2011
+     * Purpose: This function is called periodically during operator control. Allows
+     *          for teleoperated control of the robot.
+     * Inputs:  None
+     * Outputs: None
      */
     public void teleopPeriodic() {
         
-        // feed the user watchdog at every period when in autonomous
+        // Feed the user watchdog at every period when in autonomous
         Watchdog.getInstance().feed();
-        System.out.println("teleop Periodic Watchdog Fed");
+        if (DEBUG == true){
+            System.out.println("Teleop Periodic Watchdog Fed");
+        }
+        
+        // Determine whether arcade drive or tank drive is in use
         setDriveMode();
-        System.out.println("Set Drive Mode called");
+        if (DEBUG == true){
+            System.out.println("setDriveMode called");
+        }
+        
+        // Brake the robot when no signal is sent
         brakeOnNeutral();
-        System.out.println("Set brakeOnNeutral called");
-        
-        
+        if (DEBUG == true){
+            System.out.println("brakeOnNeutral called");
+        }
     }
    
     /*--------------------------------------------------------------------------*/
@@ -110,7 +142,9 @@ public class TPARobot extends IterativeRobot {
         // determine if tank or arcade mode, based upon position of "Z" wheel on kit joystick
         if (theRightStick.getZ() <= 0) {    // Logitech Attack3 has z-polarity reversed; up is negative
             // use arcade drive
-            System.out.println("theRightStick.getZ called" );
+            if (DEBUG == true){
+                System.out.println("theRightStick.getZ called" );
+            }
             theRobotDrive.arcadeDrive(theRightStick, false);	// drive with arcade style (use right stick)
             if (theDriveMode != ARCADE_DRIVE) {
                 // if newly entered arcade drive, print out a message
@@ -161,9 +195,13 @@ public class TPARobot extends IterativeRobot {
      */
     
     public boolean isNeutral(Joystick aRightStick, Joystick aLeftStick){
-        System.out.println("isNeutral Called");
+        if (DEBUG == true){
+            System.out.println("isNeutral Called");
+        }
         if(theDriveMode == ARCADE_DRIVE){ //if arcade drive
-            System.out.println("In Arcade Mode");
+            if (DEBUG == true){
+                System.out.println("Arcade Drive Recognized by isNeutral");
+            }
             if(aRightStick.getY() == 0 && aRightStick.getX() == 0){ //there is no input
                 return true;
             }
@@ -172,7 +210,9 @@ public class TPARobot extends IterativeRobot {
             }
         }
         else if(theDriveMode == TANK_DRIVE){ //if tank drive
-            System.out.println("In Tank Drive");
+            if (DEBUG == true){
+                System.out.println("Tank Drive Recognized by isNeutral");
+            }
             if(aRightStick.getY() == 0 && aLeftStick.getY() == 0){
                 return true;
             }
@@ -200,10 +240,17 @@ public class TPARobot extends IterativeRobot {
      */
     
     public void brakeOnNeutral(){
-        double theLeftSpeedOutput = 0;
-        double theRightSpeedOutput = 0;
-        System.out.println("Brake on neutral called");
-        if(isNeutral(theRightStick, theLeftStick)){
+        
+        double theLeftSpeedOutput = 0; // value the left motor will be sent
+        double theRightSpeedOutput = 0; // value the right motor will be sent
+        
+        if (DEBUG == true){
+            System.out.println("brakeOnNeutral called");
+        }
+        
+        if(isNeutral(theRightStick, theLeftStick)){ // if no signal is sent to the robot
+            
+            // get the direction of the left motor and store the stop value vector to theLeftSpeedOutput
             if(!theLeftEncoder.getStopped()){
                 if(theLeftEncoder.getDirection()){
                     theLeftSpeedOutput = STOP_VALUE;
@@ -212,6 +259,8 @@ public class TPARobot extends IterativeRobot {
                     theLeftSpeedOutput = -STOP_VALUE;
                 }
             }
+            
+            // get the direction of the right motor and store a stop value vector to theRightSpeedOutput
             if(!theRightEncoder.getStopped()){
                 if(theRightEncoder.getDirection()){
                     theRightSpeedOutput = STOP_VALUE;
@@ -220,6 +269,7 @@ public class TPARobot extends IterativeRobot {
                     theRightSpeedOutput = -STOP_VALUE;
                 }
             }
+        // brake the robot at the value of the stop value
         brake(theLeftSpeedOutput, theRightSpeedOutput);
         }
     }
