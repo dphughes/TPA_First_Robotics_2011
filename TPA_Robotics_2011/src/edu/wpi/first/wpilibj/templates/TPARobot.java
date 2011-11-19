@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Watchdog;
 import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.Jaguar;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -29,8 +30,10 @@ public class TPARobot extends IterativeRobot {
     Joystick theLeftStick;                      // Left joystick
     Encoder theRightEncoder;                    // Right E4P Motion Sensor
     Encoder theLeftEncoder;                     // Left E4P Motion Sensor
+    Jaguar theArmMotor;                         // The Motor Controlling the Arm
     static final boolean DEBUG = false;         // Debug Trigger
-    static final double STOP_VALUE = 0.1;       // The max of the range recognized as zero
+    static final double STOP_VALUE = 0.1;       // Value drive motors are sent when stopping
+    static final double ARM_SPEED = 0.5;        // Value arm motor is sent
     
     // Drive mode selection
     int theDriveMode;                           // The actual drive mode that is currently selected.
@@ -85,6 +88,12 @@ public class TPARobot extends IterativeRobot {
         if (DEBUG == true){
             System.out.println("The Encoders constructed successfully");
         }
+        
+        // Initialize a Motor connected to a Jaguar Speed Controller at port 5
+        theArmMotor = new Jaguar(5);
+        if (DEBUG == true){
+            System.out.println("The arm motor constructed successfully");
+        }
 
         if (DEBUG == true){
 	System.out.println("RobotInit() completed.\n");
@@ -125,6 +134,12 @@ public class TPARobot extends IterativeRobot {
         brakeOnNeutral();
         if (DEBUG == true){
             System.out.println("brakeOnNeutral called");
+        }
+        
+        // Move the Arm
+        moveArm();
+        if (DEBUG == true){
+        System.out.println("moveArm called");
         }
     }
    
@@ -276,4 +291,43 @@ public class TPARobot extends IterativeRobot {
     }
     
     /*--------------------------------------------------------------------------*/
+    
+    /*--------------------------------------------------------------------------*/
+   
+    /*
+     * Author:  Marissa Beene
+     * Date:    11/19/11
+     * Purpose: To move the arm with a motor. When the joystick is pushed forward, 
+     *          the motor will run at ARM_SPEED. When the joystick is pulled backward,
+     *          the motor will run in the other direction. If tank drive is currently
+     *          in use, the arm will be deactivated.
+     * Inputs:  None
+     * Outputs: None
+     */
+    
+    public void moveArm (){
+        // Do not use arm if both joysticks used on drive system
+        if(theDriveMode == TANK_DRIVE){
+            theArmMotor.set(0.0);
+        }
+        if (theDriveMode != TANK_DRIVE){
+            // if joystick pushed forward, run the motor forward
+            if (theLeftStick.getY() > 0){ 
+                theArmMotor.set (ARM_SPEED);
+            }
+            
+            // if joystick pushed backward, run the motor backward
+            if (theLeftStick.getY() < 0){ 
+                theArmMotor.set (-ARM_SPEED);
+            }
+            
+            // if joystick not moved, don't run motor
+            if (theLeftStick.getY() == 0){
+                theArmMotor.set(0.0);
+            }
+        }
+    }
+    /*--------------------------------------------------------------------------*/
+    
 }
+
