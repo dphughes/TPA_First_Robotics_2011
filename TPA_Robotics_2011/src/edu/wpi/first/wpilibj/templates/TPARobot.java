@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Watchdog;
-
+import edu.wpi.first.wpilibj.PWM;
 /**
  * The VM is configured to automatically run this class, and to call the
  * functions corresponding to each mode, as described in the IterativeRobot
@@ -25,6 +25,8 @@ public class TPARobot extends IterativeRobot {
     RobotDrive theRobotDrive;   // Robot Drive Variable
     Joystick theRightStick;     // Right joystick
     Joystick theLeftStick;      // Left joystick
+    PWM theRightPWM;            // Right E4P Motion Sensor
+    PWM theLeftPWM;             // Left E4P Motion Sensor
     
     // Drive mode selection
     int theDriveMode;                           // The actual drive mode that is currently selected.
@@ -52,6 +54,10 @@ public class TPARobot extends IterativeRobot {
         
         // Initialize the Drive Mode to Uninitialized
         theDriveMode = UNINITIALIZED_DRIVE;
+        
+        // Defines two PWM (E4P Motion Sensor) at ports 3 and 4
+        theRightPWM = new PWM(3);
+        theLeftPWM = new PWM(4);
     }
     /*--------------------------------------------------------------------------*/
     
@@ -83,6 +89,20 @@ public class TPARobot extends IterativeRobot {
         Watchdog.getInstance().feed();
         
         setDriveMode();
+        if (isNeutral(theRightStick)){  // If no signal
+            brake(theLeftPWM.getSpeed(), theRightPWM.getSpeed()); // Brake the Robot
+        }
+		if (theRightStick.getZ() > 0) { 
+		/*This Z-Value (0) is temporary since I was not able to 
+		  find/obtain any information on the range of Z-Values of the Z-Axis*/
+			SlowSpeedMode(theLeftPWM,theRightPWM);
+		}
+		if (theRightStick.getZ() == 0) {
+		/*This Z-Value (0) is temporary since I was not able to 
+		  find/obtain any information on the range of Z-Values of the Z-Axis*/
+			MediumSpeedMode(theLeftPWM,theRightPWM);
+        }
+        
         
     }
     
@@ -119,4 +139,90 @@ public class TPARobot extends IterativeRobot {
     }
     /*--------------------------------------------------------------------------*/
     
+    /*--------------------------------------------------------------------------*/
+    /*
+     * Author:  Marissa Beene
+     * Date:    10/30/2011 (Marissa Beene)
+     * Purpose: To use the motors to brake the robot. Takes the speed from the 
+     *          each motor and sends the reverse signal back.
+     * Inputs:  Double aSpeedRight - the speed of the right motor
+     *          Double aSpeedLeft - the speed of the left motor
+     * Outputs: None
+     */
+    
+    public void brake(double aSpeedLeft, double aSpeedRight){
+        theRobotDrive.tankDrive(-aSpeedLeft, -aSpeedRight); //drive the robot at opposite values
+        }
+    /*--------------------------------------------------------------------------*/
+    
+    
+    /*--------------------------------------------------------------------------*/
+    
+    /*
+     * Author:  Marissa Beene
+     * Date:    10/30/11
+     * Purpose: To determine if there is no signal in arcade mode. If there is no 
+     *          signal on the joystick, it will return true, otherwise, it will 
+     *          return false.
+     * Inputs:  Joystick aStick  - the driving joystick
+     * Outputs: Boolean - returns true if the joystick is not sending a signal
+     */
+    public boolean isNeutral(Joystick aStick){
+        if(aStick.getY() == 0 && aStick.getX() == 0){ //there is no input
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+    /*--------------------------------------------------------------------------*/
+	
+	
+	/* ----------------------------------------------------------------------------------------------*/
+	/* Author:   Sumbhav Sethia
+	 * Date:     11/03/2011 (Sumbhav Sethia)
+	 * Function: MediumSpeedMode
+	 * Purpose:  To set the max speed in either dircetion 
+	 *           to approximately two-thirds the robot's maximum speed.
+	 * Inputs:   aPWMLeft, aPWNRight - The PWM machines attached to the motors
+     * Outputs:  None
+	*/
+	 public void MediumSpeedMode (PWM aPWMLeft, PWM aPWMRight) {
+		aPWMLeft.setBounds (213,129,128,127,85);
+        aPWMRight.setBounds (213,129,128,127,85);		
+		/*Sets the max speed, deadband max, center speed(off speed), deadband min, 
+		and minimum speed respectively. Apparently, the speed can also be as an
+		integer between 0 and 255, with 0 being off, 1-127 being reverse, 
+		128 being neutral, and 128-255 being forward. I am not sure about whether 
+		my deadband numbers work or not, or whether a deadband is absolutely necessary, 
+		but Daniel can help with that. A deadband is basically a point at which no action occurs,
+		or there is no voltage.
+		Here is the location of the setBounds method:
+			Inside FRC Classes Folder, then doc/javadoc/edu/wpi/first/wpilibj/PWM */
+	 }
+	/*----------------------------------------------------------------------------------------------*/
+	 
+	/* ----------------------------------------------------------------------------------------------*/
+	/* Author:   Sumbhav Sethia
+	 * Date:     11/03/2011 (Sumbhav Sethia)
+	 * Function: SlowSpeedMode
+	 * Purpose:  To set the max speed in either dircetion 
+	 *           to approximately one-third the robot's maximum speed.
+	 * Inputs:   aPWMLeft, aPWNRight - The PWM machines attached to the motors
+	 * Outputs:  None
+	 */
+	 public void SlowSpeedMode (PWM aPWMLeft, PWM aPWMRight) {
+		aPWMLeft.setBounds (171,129,128,127,43);
+		aPWMRight.setBounds (171,129,128,127,43);
+		/*Sets the max speed, deadband max, center speed(off speed), deadband min, 
+		and minimum speed respectively. Apparently, the speed can also be as an
+		integer between 0 and 255, with 0 being off, 1-127 being reverse, 
+		128 being neutral, and 128-255 being forward. I am not sure about whether 
+		my deadband numbers work or not, or whether a deadband is absolutely necessary, 
+		but Daniel can help with that. A deadband is basically a point at which no action occurs,
+		or there is no voltage.
+		Here is the location of the setBounds method:
+			Inside FRC Classes Folder, then doc/javadoc/edu/wpi/first/wpilibj/PWM */
+	 }
+	/*----------------------------------------------------------------------------------------------*/
 }
