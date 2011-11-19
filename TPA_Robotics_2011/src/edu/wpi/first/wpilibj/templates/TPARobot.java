@@ -137,14 +137,9 @@ public class TPARobot extends IterativeRobot {
         }
         
         // Move the Arm
-        if(theDriveMode == TANK_DRIVE){ //Stop the arm if the joystick is already in use
-            driveMotor (theLeftStick, theArmMotor, 0);
-        }
-        if(theDriveMode != TANK_DRIVE){
-            driveMotor(theLeftStick, theArmMotor, ARM_SPEED);   
-        }
+        moveArm();
         if (DEBUG == true){
-        System.out.println("driveMotor called");
+        System.out.println("moveArm called");
         }
     }
    
@@ -302,30 +297,36 @@ public class TPARobot extends IterativeRobot {
     /*
      * Author:  Marissa Beene
      * Date:    11/19/11
-     * Purpose: To drive a motor using the joystick at a preset speed. The function
-     *          will run the motor at the specified value in the direction of the joystick.
-     * Inputs:  Joystick aStick - the joystick used to move the motor
-     *          Jaguar aMotor - motor connected to a jaguar to be controlled
-     *          double aSpeed - speed the motor will run at (value from -1.0 to 1.0)
+     * Purpose: To move the arm with a motor. When the joystick is pushed forward, 
+     *          the motor will run at ARM_SPEED. When the joystick is pulled backward,
+     *          the motor will run in the other direction. If tank drive is currently
+     *          in use, the arm will be deactivated.
+     * Inputs:  None
      * Outputs: None
      */
     
-    public void driveMotor (Joystick aStick,Jaguar aMotor, double aSpeed){ 
+    public void moveArm (){
+        // Do not use arm if both joysticks used on drive system
+        if(theDriveMode == TANK_DRIVE){
+            theArmMotor.set(0.0);
+        }
+        if (theDriveMode != TANK_DRIVE){
             // if joystick pushed forward, run the motor forward
-            if (aStick.getY() > 0){ 
-                aMotor.set (aSpeed);
+            if (theLeftStick.getY() > 0){ 
+                theArmMotor.set (ARM_SPEED);
             }
             
             // if joystick pushed backward, run the motor backward
-            if (aStick.getY() < 0){ 
-                aMotor.set (-aSpeed);
+            if (theLeftStick.getY() < 0){ 
+                theArmMotor.set (-ARM_SPEED);
             }
             
             // if joystick not moved, don't run motor
-            if (aStick.getY() == 0){
-                aMotor.set(0.0);
+            if (theLeftStick.getY() == 0){
+                theArmMotor.set(0.0);
             }
         }
+    }
     /*--------------------------------------------------------------------------*/
     
 }
