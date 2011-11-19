@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Watchdog;
 import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.Jaguar;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -29,8 +30,10 @@ public class TPARobot extends IterativeRobot {
     Joystick theLeftStick;                      // Left joystick
     Encoder theRightEncoder;                    // Right E4P Motion Sensor
     Encoder theLeftEncoder;                     // Left E4P Motion Sensor
+    Jaguar theArmMotor;                         // The Motor Controlling the Arm
     static final boolean DEBUG = false;         // Debug Trigger
-    static final double STOP_VALUE = 0.1;       // The max of the range recognized as zero
+    static final double STOP_VALUE = 0.1;       // Value drive motors are sent when stopping
+    static final double ARM_SPEED = 0.5;        // Value arm motor is sent
     
     // Drive mode selection
     int theDriveMode;                           // The actual drive mode that is currently selected.
@@ -85,6 +88,12 @@ public class TPARobot extends IterativeRobot {
         if (DEBUG == true){
             System.out.println("The Encoders constructed successfully");
         }
+        
+        // Initialize a Motor connected to a Jaguar Speed Controller at port 5
+        theArmMotor = new Jaguar(5);
+        if (DEBUG == true){
+            System.out.println("The arm motor constructed successfully");
+        }
 
         if (DEBUG == true){
 	System.out.println("RobotInit() completed.\n");
@@ -125,6 +134,17 @@ public class TPARobot extends IterativeRobot {
         brakeOnNeutral();
         if (DEBUG == true){
             System.out.println("brakeOnNeutral called");
+        }
+        
+        // Move the Arm
+        if(theDriveMode == TANK_DRIVE){ //Stop the arm if the joystick is already in use
+            driveMotor (theLeftStick, theArmMotor, 0);
+        }
+        if(theDriveMode != TANK_DRIVE){
+            driveMotor(theLeftStick, theArmMotor, ARM_SPEED);   
+        }
+        if (DEBUG == true){
+        System.out.println("driveMotor called");
         }
     }
    
@@ -276,4 +296,37 @@ public class TPARobot extends IterativeRobot {
     }
     
     /*--------------------------------------------------------------------------*/
+    
+    /*--------------------------------------------------------------------------*/
+   
+    /*
+     * Author:  Marissa Beene
+     * Date:    11/19/11
+     * Purpose: To drive a motor using the joystick at a preset speed. The function
+     *          will run the motor at the specified value in the direction of the joystick.
+     * Inputs:  Joystick aStick - the joystick used to move the motor
+     *          Jaguar aMotor - motor connected to a jaguar to be controlled
+     *          double aSpeed - speed the motor will run at (value from -1.0 to 1.0)
+     * Outputs: None
+     */
+    
+    public void driveMotor (Joystick aStick,Jaguar aMotor, double aSpeed){ 
+            // if joystick pushed forward, run the motor forward
+            if (aStick.getY() > 0){ 
+                aMotor.set (aSpeed);
+            }
+            
+            // if joystick pushed backward, run the motor backward
+            if (aStick.getY() < 0){ 
+                aMotor.set (-aSpeed);
+            }
+            
+            // if joystick not moved, don't run motor
+            if (aStick.getY() == 0){
+                aMotor.set(0.0);
+            }
+        }
+    /*--------------------------------------------------------------------------*/
+    
 }
+
