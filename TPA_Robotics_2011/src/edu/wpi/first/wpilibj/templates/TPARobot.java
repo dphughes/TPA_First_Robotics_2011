@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Watchdog;
+import edu.wpi.first.wpilibj.Encoder;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -20,11 +21,16 @@ import edu.wpi.first.wpilibj.Watchdog;
  * creating this project, you must also update the manifest file in the resource
  * directory.
  */
+
 public class TPARobot extends IterativeRobot {
    
-    RobotDrive theRobotDrive;   // Robot Drive Variable
-    Joystick theRightStick;     // Right joystick
-    Joystick theLeftStick;      // Left joystick
+    RobotDrive theRobotDrive;                   // Robot Drive Variable
+    Joystick theRightStick;                     // Right joystick
+    Joystick theLeftStick;                      // Left joystick
+    Encoder theRightEncoder;                    // Right E4P Motion Sensor
+    Encoder theLeftEncoder;                     // Left E4P Motion Sensor
+    static final boolean DEBUG = false;         // Debug Trigger
+    static final double STOP_VALUE = 0.1;       // The max of the range recognized as zero
     
     // Drive mode selection
     int theDriveMode;                           // The actual drive mode that is currently selected.
@@ -43,27 +49,46 @@ public class TPARobot extends IterativeRobot {
      */
     public void TPARobot(){
         
-        // Create a robot using standard right/left robot drive on PWMS 1 and 2
-        theRobotDrive = new RobotDrive(1,2);
-        
-        // Define joysticks being used at USB port #1 and USB port #2 on the Drivers Station
-	theRightStick = new Joystick(1);
-	theLeftStick = new Joystick(2);
-        
-        // Initialize the Drive Mode to Uninitialized
-        theDriveMode = UNINITIALIZED_DRIVE;
     }
     /*--------------------------------------------------------------------------*/
     
     /*
-     * This function is run when the robot is first started up and should be
-     * used for any initialization code.
+     * Author:  Daniel Hughes
+     * Date:    11/12/2011
+     * Purpose: Robot Initialization Function. This function is run once when the
+     *          robot is first started up and should be used for any initialization
+     *          code.
+     * Inputs:  None
+     * Outputs: None
      */
-    public void robotInit() {
-        // Actions which would be performed once (and only once) upon initialization of the
-	// robot would be put here.
 
+    public void robotInit() {
+        // Create a drive system using standard right/left robot drive on PWMS 1 and 2
+        theRobotDrive = new RobotDrive(1,2);
+        if (DEBUG == true){
+            System.out.println("TheRobotDrive constructed successfully");
+        }
+        
+        // Define joysticks being used at USB port #1 and USB port #2 on the Drivers Station
+	theRightStick = new Joystick(1);
+	theLeftStick = new Joystick(2);
+        if (DEBUG == true){
+           System.out.println("The Joysticks constructed successfully"); 
+        }
+        
+        // Initialize the Drive Mode to Uninitialized
+        theDriveMode = UNINITIALIZED_DRIVE;
+        
+        // Defines two E4P Motion Sensors at ports 1,2,3, and 4
+        theLeftEncoder = new Encoder(1,2);
+        theRightEncoder = new Encoder(3,4);
+        if (DEBUG == true){
+            System.out.println("The Encoders constructed successfully");
+        }
+
+        if (DEBUG == true){
 	System.out.println("RobotInit() completed.\n");
+        }
     }
 
     /**
@@ -74,18 +99,35 @@ public class TPARobot extends IterativeRobot {
 	Watchdog.getInstance().feed();
     }
 
-    /**
-     * This function is called periodically during operator control
+    /*
+     * Author:  Team
+     * Date:    11/12/2011
+     * Purpose: This function is called periodically during operator control. Allows
+     *          for teleoperated control of the robot.
+     * Inputs:  None
+     * Outputs: None
      */
     public void teleopPeriodic() {
         
-        // feed the user watchdog at every period when in autonomous
+        // Feed the user watchdog at every period when in autonomous
         Watchdog.getInstance().feed();
+        if (DEBUG == true){
+            System.out.println("Teleop Periodic Watchdog Fed");
+        }
         
+        // Determine whether arcade drive or tank drive is in use
         setDriveMode();
+        if (DEBUG == true){
+            System.out.println("setDriveMode called");
+        }
         
+        // Brake the robot when no signal is sent
+        brakeOnNeutral();
+        if (DEBUG == true){
+            System.out.println("brakeOnNeutral called");
+        }
     }
-    
+   
     /*--------------------------------------------------------------------------*/
     /*
      * Author:  Daniel Hughes
@@ -101,6 +143,9 @@ public class TPARobot extends IterativeRobot {
         // determine if tank or arcade mode, based upon position of "Z" wheel on kit joystick
         if (theRightStick.getZ() <= 0) {    // Logitech Attack3 has z-polarity reversed; up is negative
             // use arcade drive
+            if (DEBUG == true){
+                System.out.println("theRightStick.getZ called" );
+            }
             theRobotDrive.arcadeDrive(theRightStick, false);	// drive with arcade style (use right stick)
             if (theDriveMode != ARCADE_DRIVE) {
                 // if newly entered arcade drive, print out a message
@@ -118,5 +163,117 @@ public class TPARobot extends IterativeRobot {
         }
     }
     /*--------------------------------------------------------------------------*/
+   
+    /*--------------------------------------------------------------------------*/
+    /*
+     * Author:  Marissa Beene
+     * Date:    10/30/2011 (Marissa Beene)
+     * Purpose: To use the motors to brake the robot. Takes the speed from the 
+     *          each motor and sends the reverse signal back.
+     * Inputs:  Double aSpeedRight - the speed of the right motor
+     *          Double aSpeedLeft - the speed of the left motor
+     * Outputs: None
+     */
     
+    public void brake(double aSpeedLeft, double aSpeedRight){
+        theRobotDrive.tankDrive(-aSpeedLeft, -aSpeedRight); //drive the robot at opposite values
+        }
+    /*--------------------------------------------------------------------------*/
+    
+    
+    /*--------------------------------------------------------------------------*/
+    
+    /*
+     * Author:  Marissa Beene
+     * Date:    10/30/11
+     * Purpose: To determine if there is no signal. First determines the drive
+     *          mode and discards the left stick if in arcade mode. If there is 
+     *          no signal to the drive train, it will return true, otherwise it 
+     *          will return false
+     * Inputs:  Joystick aRightStick  - the right joystick
+     *          Joystick aLeftStick - the left joystick
+     * Outputs: Boolean - returns true if the drive train is not sent a signal
+     */
+    
+    public boolean isNeutral(Joystick aRightStick, Joystick aLeftStick){
+        if (DEBUG == true){
+            System.out.println("isNeutral Called");
+        }
+        if(theDriveMode == ARCADE_DRIVE){ //if arcade drive
+            if (DEBUG == true){
+                System.out.println("Arcade Drive Recognized by isNeutral");
+            }
+            if(aRightStick.getY() == 0 && aRightStick.getX() == 0){ //there is no input
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+        else if(theDriveMode == TANK_DRIVE){ //if tank drive
+            if (DEBUG == true){
+                System.out.println("Tank Drive Recognized by isNeutral");
+            }
+            if(aRightStick.getY() == 0 && aLeftStick.getY() == 0){
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+        else{
+            return false;
+        } 
+    }
+    /*--------------------------------------------------------------------------*/
+    
+    
+    /*--------------------------------------------------------------------------*/
+    
+    /*
+     * Author:  Marissa Beene
+     * Date:    11/5/11
+     * Purpose: To brake the robot if there is no signal in arcade mode. If the 
+     *          wheel is not considered stopped, it will read the direction that the wheel
+     *          is turning and send it the stop value in the other direction.
+     * Inputs:  None
+     * Outputs: None
+     */
+    
+    public void brakeOnNeutral(){
+        
+        double theLeftSpeedOutput = 0; // value the left motor will be sent
+        double theRightSpeedOutput = 0; // value the right motor will be sent
+        
+        if (DEBUG == true){
+            System.out.println("brakeOnNeutral called");
+        }
+        
+        if(isNeutral(theRightStick, theLeftStick)){ // if no signal is sent to the robot
+            
+            // get the direction of the left motor and store the stop value vector to theLeftSpeedOutput
+            if(!theLeftEncoder.getStopped()){
+                if(theLeftEncoder.getDirection()){
+                    theLeftSpeedOutput = STOP_VALUE;
+                }
+                else{
+                    theLeftSpeedOutput = -STOP_VALUE;
+                }
+            }
+            
+            // get the direction of the right motor and store a stop value vector to theRightSpeedOutput
+            if(!theRightEncoder.getStopped()){
+                if(theRightEncoder.getDirection()){
+                    theRightSpeedOutput = STOP_VALUE;
+                }
+                else{
+                    theRightSpeedOutput = -STOP_VALUE;
+                }
+            }
+        // brake the robot at the value of the stop value
+        brake(theLeftSpeedOutput, theRightSpeedOutput);
+        }
+    }
+    
+    /*--------------------------------------------------------------------------*/
 }
