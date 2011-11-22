@@ -33,7 +33,8 @@ public class TPARobot extends IterativeRobot {
     Jaguar theArmMotor;                         // The Motor Controlling the Arm
     static final boolean DEBUG = false;         // Debug Trigger
     static final double STOP_VALUE = 0.1;       // Value drive motors are sent when stopping
-    static final double ARM_SPEED = 0.5;        // Value arm motor is sent
+    static final double ARM_SPEED = 0.1;        // Value arm motor is sent
+    static final double JOYSTICK_ZERO = 50;     // Highest value recognized as 0
     
     // Drive mode selection
     int theDriveMode;                           // The actual drive mode that is currently selected.
@@ -312,17 +313,17 @@ public class TPARobot extends IterativeRobot {
         }
         if (theDriveMode != TANK_DRIVE){
             // if joystick pushed forward, run the motor forward
-            if (theLeftStick.getY() > 0){ 
+            if (theLeftStick.getY() > JOYSTICK_ZERO){ 
                 theArmMotor.set (ARM_SPEED);
             }
             
             // if joystick pushed backward, run the motor backward
-            if (theLeftStick.getY() < 0){ 
+            if (theLeftStick.getY() < -JOYSTICK_ZERO){ 
                 theArmMotor.set (-ARM_SPEED);
             }
             
             // if joystick not moved, don't run motor
-            if (theLeftStick.getY() == 0){
+            if (theLeftStick.getY() < JOYSTICK_ZERO && theLeftStick.getY() > -JOYSTICK_ZERO){
                 theArmMotor.set(0.0);
             }
         }
@@ -330,4 +331,3 @@ public class TPARobot extends IterativeRobot {
     /*--------------------------------------------------------------------------*/
     
 }
-
