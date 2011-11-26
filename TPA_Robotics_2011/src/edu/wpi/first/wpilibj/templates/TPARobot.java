@@ -25,7 +25,7 @@ import edu.wpi.first.wpilibj.Jaguar;
 
 public class TPARobot extends IterativeRobot {
    
-    RobotDrive theRobotDrive;                   // Robot Drive Variable
+    TPARobotDriver theRobotDrive;                   // Robot Drive Variable
     Joystick theRightStick;                     // Right joystick
     Joystick theLeftStick;                      // Left joystick
     Encoder theRightEncoder;                    // Right E4P Motion Sensor
@@ -41,6 +41,7 @@ public class TPARobot extends IterativeRobot {
     static final int UNINITIALIZED_DRIVE = 0;   // Value when no drive mode is selected
     static final int ARCADE_DRIVE = 1;          // Value when arcade mode is selected 
     static final int TANK_DRIVE = 2;            // Value when tank drive is selected
+    public double theMaxSpeed;           // Multiplier for speed, determined by Z-Axis on left stick
     
     /*--------------------------------------------------------------------------*/
     /*
@@ -68,7 +69,7 @@ public class TPARobot extends IterativeRobot {
 
     public void robotInit() {
         // Create a drive system using standard right/left robot drive on PWMS 1 and 2
-        theRobotDrive = new RobotDrive(1,2);
+        theRobotDrive = new TPARobotDriver(1,2);
         if (DEBUG == true){
             System.out.println("TheRobotDrive constructed successfully");
         }
@@ -131,6 +132,13 @@ public class TPARobot extends IterativeRobot {
             System.out.println("setDriveMode called");
         }
         
+        //Set the multiplier for max speed
+        setMaxSpeed();
+        if (DEBUG == true) {
+            System.out.println("setMaxSpeed called");
+        }
+                
+        
         // Brake the robot when no signal is sent
         brakeOnNeutral();
         if (DEBUG == true){
@@ -179,7 +187,36 @@ public class TPARobot extends IterativeRobot {
         }
     }
     /*--------------------------------------------------------------------------*/
-   
+    
+    /*--------------------------------------------------------------------------*/
+    /*
+     * Author:  Gennaro De Luca
+     * Date:    11/26/2011 (Gennaro De Luca)
+     * Purpose: To determine the speed multiplier based on the "Z" wheel on 
+     *          the left joystick. If the "Z" wheel is up (negative) The multiplier remains at 1.
+     *          Otherwise, the multiplier is set to one-half.
+     * Inputs:  None
+     * Outputs: None
+     */    
+    public void setMaxSpeed(){
+        
+        
+        if (theLeftStick.getZ() <= 0) {    // Logitech Attack3 has z-polarity reversed; up is negative
+            theMaxSpeed = 1;               //set the multiplier to default value of 1
+            if (DEBUG == true){
+                System.out.println("theLeftStick.getZ called");
+            }
+        }
+        else if (theLeftStick.getZ() > 0) {
+            theMaxSpeed = 0.5;             //set the multiplier to half default, 0.5
+            if (DEBUG == true) {
+                System.out.println("theLeftStick.getZ called");
+            }
+        }
+        theRobotDrive.setMaxSpeed(theMaxSpeed); //tests the multiplier
+    }
+    /*--------------------------------------------------------------------------*/
+                
     /*--------------------------------------------------------------------------*/
     /*
      * Author:  Marissa Beene
@@ -329,5 +366,7 @@ public class TPARobot extends IterativeRobot {
         }
     }
     /*--------------------------------------------------------------------------*/
+    
+    
     
 }
