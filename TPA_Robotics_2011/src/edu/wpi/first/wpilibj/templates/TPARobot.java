@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Watchdog;
 import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.Jaguar;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -24,19 +25,23 @@ import edu.wpi.first.wpilibj.Encoder;
 
 public class TPARobot extends IterativeRobot {
    
-    RobotDrive theRobotDrive;                   // Robot Drive Variable
+    TPARobotDriver theRobotDrive;                   // Robot Drive Variable
     Joystick theRightStick;                     // Right joystick
     Joystick theLeftStick;                      // Left joystick
     Encoder theRightEncoder;                    // Right E4P Motion Sensor
     Encoder theLeftEncoder;                     // Left E4P Motion Sensor
+    Jaguar theArmMotor;                         // The Motor Controlling the Arm
     static final boolean DEBUG = false;         // Debug Trigger
-    static final double STOP_VALUE = 0.1;       // The max of the range recognized as zero
+    static final double STOP_VALUE = 0.1;       // Value drive motors are sent when stopping
+    static final double ARM_SPEED = 0.1;        // Value arm motor is sent
+    static final double JOYSTICK_ZERO = 50;     // Highest value recognized as 0
     
     // Drive mode selection
     int theDriveMode;                           // The actual drive mode that is currently selected.
     static final int UNINITIALIZED_DRIVE = 0;   // Value when no drive mode is selected
     static final int ARCADE_DRIVE = 1;          // Value when arcade mode is selected 
     static final int TANK_DRIVE = 2;            // Value when tank drive is selected
+    public double theMaxSpeed;           // Multiplier for speed, determined by Z-Axis on left stick
     
     /*--------------------------------------------------------------------------*/
     /*
@@ -64,7 +69,7 @@ public class TPARobot extends IterativeRobot {
 
     public void robotInit() {
         // Create a drive system using standard right/left robot drive on PWMS 1 and 2
-        theRobotDrive = new RobotDrive(1,2);
+        theRobotDrive = new TPARobotDriver(1,2);
         if (DEBUG == true){
             System.out.println("TheRobotDrive constructed successfully");
         }
@@ -84,6 +89,12 @@ public class TPARobot extends IterativeRobot {
         theRightEncoder = new Encoder(3,4);
         if (DEBUG == true){
             System.out.println("The Encoders constructed successfully");
+        }
+        
+        // Initialize a Motor connected to a Jaguar Speed Controller at port 5
+        theArmMotor = new Jaguar(5);
+        if (DEBUG == true){
+            System.out.println("The arm motor constructed successfully");
         }
 
         if (DEBUG == true){
@@ -121,10 +132,23 @@ public class TPARobot extends IterativeRobot {
             System.out.println("setDriveMode called");
         }
         
+        //Set the multiplier for max speed
+        setMaxSpeed();
+        if (DEBUG == true) {
+            System.out.println("setMaxSpeed called");
+        }
+                
+        
         // Brake the robot when no signal is sent
         brakeOnNeutral();
         if (DEBUG == true){
             System.out.println("brakeOnNeutral called");
+        }
+        
+        // Move the Arm
+        moveArm();
+        if (DEBUG == true){
+        System.out.println("moveArm called");
         }
     }
    
@@ -163,7 +187,36 @@ public class TPARobot extends IterativeRobot {
         }
     }
     /*--------------------------------------------------------------------------*/
-   
+    
+    /*--------------------------------------------------------------------------*/
+    /*
+     * Author:  Gennaro De Luca
+     * Date:    11/26/2011 (Gennaro De Luca)
+     * Purpose: To determine the speed multiplier based on the "Z" wheel on 
+     *          the left joystick. If the "Z" wheel is up (negative) The multiplier remains at 1.
+     *          Otherwise, the multiplier is set to one-half.
+     * Inputs:  None
+     * Outputs: None
+     */    
+    public void setMaxSpeed(){
+        
+        
+        if (theLeftStick.getZ() <= 0) {    // Logitech Attack3 has z-polarity reversed; up is negative
+            theMaxSpeed = 1;               //set the multiplier to default value of 1
+            if (DEBUG == true){
+                System.out.println("theLeftStick.getZ called");
+            }
+        }
+        else if (theLeftStick.getZ() > 0) {
+            theMaxSpeed = 0.5;             //set the multiplier to half default, 0.5
+            if (DEBUG == true) {
+                System.out.println("theLeftStick.getZ called");
+            }
+        }
+        theRobotDrive.setMaxSpeed(theMaxSpeed); //tests the multiplier
+    }
+    /*--------------------------------------------------------------------------*/
+                
     /*--------------------------------------------------------------------------*/
     /*
      * Author:  Marissa Beene
@@ -276,4 +329,44 @@ public class TPARobot extends IterativeRobot {
     }
     
     /*--------------------------------------------------------------------------*/
+    
+    /*--------------------------------------------------------------------------*/
+   
+    /*
+     * Author:  Marissa Beene
+     * Date:    11/19/11
+     * Purpose: To move the arm with a motor. When the joystick is pushed forward, 
+     *          the motor will run at ARM_SPEED. When the joystick is pulled backward,
+     *          the motor will run in the other direction. If tank drive is currently
+     *          in use, the arm will be deactivated.
+     * Inputs:  None
+     * Outputs: None
+     */
+    
+    public void moveArm (){
+        // Do not use arm if both joysticks used on drive system
+        if(theDriveMode == TANK_DRIVE){
+            theArmMotor.set(0.0);
+        }
+        if (theDriveMode != TANK_DRIVE){
+            // if joystick pushed forward, run the motor forward
+            if (theLeftStick.getY() > JOYSTICK_ZERO){ 
+                theArmMotor.set (ARM_SPEED);
+            }
+            
+            // if joystick pushed backward, run the motor backward
+            if (theLeftStick.getY() < -JOYSTICK_ZERO){ 
+                theArmMotor.set (-ARM_SPEED);
+            }
+            
+            // if joystick not moved, don't run motor
+            if (theLeftStick.getY() < JOYSTICK_ZERO && theLeftStick.getY() > -JOYSTICK_ZERO){
+                theArmMotor.set(0.0);
+            }
+        }
+    }
+    /*--------------------------------------------------------------------------*/
+    
+    
+    
 }
