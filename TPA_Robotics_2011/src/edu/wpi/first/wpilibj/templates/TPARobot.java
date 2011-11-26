@@ -31,10 +31,10 @@ public class TPARobot extends IterativeRobot {
     Encoder theRightEncoder;                    // Right E4P Motion Sensor
     Encoder theLeftEncoder;                     // Left E4P Motion Sensor
     Jaguar theArmMotor;                         // The Motor Controlling the Arm
-    static final boolean DEBUG = false;         // Debug Trigger
+    static final boolean DEBUG = true;         // Debug Trigger
     static final double STOP_VALUE = 0.1;       // Value drive motors are sent when stopping
-    static final double ARM_SPEED = 0.1;        // Value arm motor is sent
-    static final double JOYSTICK_ZERO = 50;     // Highest value recognized as 0
+    static final double ARM_SPEED = 0.4;        // Value arm motor is sent
+    static final double JOYSTICK_ZERO = 0;     // Highest value recognized as 0
     
     // Drive mode selection
     int theDriveMode;                           // The actual drive mode that is currently selected.
@@ -347,21 +347,33 @@ public class TPARobot extends IterativeRobot {
         // Do not use arm if both joysticks used on drive system
         if(theDriveMode == TANK_DRIVE){
             theArmMotor.set(0.0);
+            if(DEBUG == true) {
+                System.out.println("Tank Drive/Arm Motor");
+            }
         }
-        if (theDriveMode != TANK_DRIVE){
+        else if (theDriveMode != TANK_DRIVE){
             // if joystick pushed forward, run the motor forward
             if (theLeftStick.getY() > JOYSTICK_ZERO){ 
+                if(DEBUG == true) {
+                    System.out.println("Arm Motor, forward");
+                }
                 theArmMotor.set (ARM_SPEED);
             }
             
             // if joystick pushed backward, run the motor backward
             if (theLeftStick.getY() < -JOYSTICK_ZERO){ 
+                if(DEBUG == true) {
+                    System.out.println("Arm Motor, reverse");
+                }
                 theArmMotor.set (-ARM_SPEED);
             }
             
             // if joystick not moved, don't run motor
-            if (theLeftStick.getY() < JOYSTICK_ZERO && theLeftStick.getY() > -JOYSTICK_ZERO){
+            if (theLeftStick.getY() <= JOYSTICK_ZERO && theLeftStick.getY() >= -JOYSTICK_ZERO){
                 theArmMotor.set(0.0);
+                if(DEBUG == true) {
+                    System.out.println("Arm Motor, Stopped");
+                }
             }
         }
     }
