@@ -160,7 +160,7 @@ public class TPARobot extends IterativeRobot {
         }
         
         // Control the Claw
-        solenoidTrigger(theRightStick);
+        solenoidTrigger(theLeftStick);
         if (DEBUG == true) {
             System.out.println("solenoidTrigger called");
         }
