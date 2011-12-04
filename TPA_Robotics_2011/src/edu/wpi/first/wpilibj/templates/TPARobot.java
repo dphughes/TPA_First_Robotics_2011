@@ -10,10 +10,10 @@ package edu.wpi.first.wpilibj.templates;
 
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Watchdog;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Jaguar;
+import edu.wpi.first.wpilibj.Solenoid;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -31,10 +31,12 @@ public class TPARobot extends IterativeRobot {
     Encoder theRightEncoder;                    // Right E4P Motion Sensor
     Encoder theLeftEncoder;                     // Left E4P Motion Sensor
     Jaguar theArmMotor;                         // The Motor Controlling the Arm
-    static final boolean DEBUG = false;         // Debug Trigger
+    Solenoid theClawSolenoidOpen;                   // The Solenoid opening the Claw
+    Solenoid theClawSolenoidClose;                  // The Solenoid closing the Claw
+    static final boolean DEBUG = true;         // Debug Trigger
     static final double STOP_VALUE = 0.1;       // Value drive motors are sent when stopping
-    static final double ARM_SPEED = 0.1;        // Value arm motor is sent
-    static final double JOYSTICK_ZERO = 50;     // Highest value recognized as 0
+    static final double ARM_SPEED = 0.4;        // Value arm motor is sent
+    static final double JOYSTICK_ZERO = 0;     // Highest value recognized as 0
     
     // Drive mode selection
     int theDriveMode;                           // The actual drive mode that is currently selected.
@@ -100,6 +102,12 @@ public class TPARobot extends IterativeRobot {
         if (DEBUG == true){
 	System.out.println("RobotInit() completed.\n");
         }
+        
+        theClawSolenoidOpen = new Solenoid (1);
+        theClawSolenoidClose = new Solenoid (2);
+         if (DEBUG == true){
+	System.out.println("The Solenoids constructed succesfully.\n");
+        }
     }
 
     /**
@@ -149,6 +157,12 @@ public class TPARobot extends IterativeRobot {
         moveArm();
         if (DEBUG == true){
         System.out.println("moveArm called");
+        }
+        
+        // Control the Claw
+        solenoidTrigger(theRightStick);
+        if (DEBUG == true) {
+            System.out.println("solenoidTrigger called");
         }
     }
    
@@ -347,26 +361,59 @@ public class TPARobot extends IterativeRobot {
         // Do not use arm if both joysticks used on drive system
         if(theDriveMode == TANK_DRIVE){
             theArmMotor.set(0.0);
+            if(DEBUG == true) {
+                System.out.println("Tank Drive/Arm Motor");
+            }
         }
-        if (theDriveMode != TANK_DRIVE){
+        else if (theDriveMode != TANK_DRIVE){
             // if joystick pushed forward, run the motor forward
             if (theLeftStick.getY() > JOYSTICK_ZERO){ 
+                if(DEBUG == true) {
+                    System.out.println("Arm Motor, forward");
+                }
                 theArmMotor.set (ARM_SPEED);
             }
             
             // if joystick pushed backward, run the motor backward
             if (theLeftStick.getY() < -JOYSTICK_ZERO){ 
+                if(DEBUG == true) {
+                    System.out.println("Arm Motor, reverse");
+                }
                 theArmMotor.set (-ARM_SPEED);
             }
             
             // if joystick not moved, don't run motor
-            if (theLeftStick.getY() < JOYSTICK_ZERO && theLeftStick.getY() > -JOYSTICK_ZERO){
+            if (theLeftStick.getY() <= JOYSTICK_ZERO && theLeftStick.getY() >= -JOYSTICK_ZERO){
                 theArmMotor.set(0.0);
+                if(DEBUG == true) {
+                    System.out.println("Arm Motor, Stopped");
+                }
             }
         }
     }
     /*--------------------------------------------------------------------------*/
     
+    /*--------------------------------------------------------------------------*/
+    /*
+     * Author:  Gennaro De Luca
+     * Date:    12/03/2011 (Gennaro De Luca)
+     * Purpose: Make the trigger on the joystick turn the solenoid on and off.
+     * Inputs:  Joystick aStick - the right joystick
+     * Outputs: None
+     */    
     
-    
+    public void solenoidTrigger(Joystick aStick){
+       
+        if(aStick.getRawButton(1)) {
+            theClawSolenoidOpen.set(true);
+            theClawSolenoidClose.set(false);
+        }
+            else { 
+            theClawSolenoidClose.set(true);
+            theClawSolenoidOpen.set(false);
+        }
+        
+        
+        
+    }
 }
