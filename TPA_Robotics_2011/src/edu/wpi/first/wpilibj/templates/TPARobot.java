@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.Watchdog;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Jaguar;
 import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.Compressor;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -24,19 +25,28 @@ import edu.wpi.first.wpilibj.Solenoid;
  */
 
 public class TPARobot extends IterativeRobot {
-   
-    TPARobotDriver theRobotDrive;                   // Robot Drive Variable
+    
+    TPARobotDriver theRobotDrive;               // Robot Drive Variable
     Joystick theRightStick;                     // Right joystick
     Joystick theLeftStick;                      // Left joystick
     Encoder theRightEncoder;                    // Right E4P Motion Sensor
     Encoder theLeftEncoder;                     // Left E4P Motion Sensor
     Jaguar theArmMotor;                         // The Motor Controlling the Arm
-    Solenoid theClawSolenoidOpen;                   // The Solenoid opening the Claw
-    Solenoid theClawSolenoidClose;                  // The Solenoid closing the Claw
-    static final boolean DEBUG = true;         // Debug Trigger
-    static final double STOP_VALUE = 0.1;       // Value drive motors are sent when stopping
-    static final double ARM_SPEED = 0.4;        // Value arm motor is sent
-    static final double JOYSTICK_ZERO = 0;     // Highest value recognized as 0
+    Solenoid theClawSolenoidOpen;               // The Solenoid opening the Claw
+    Solenoid theClawSolenoidClose;              // The Solenoid closing the Claw
+    Compressor theCompressor;                   // The air compressor
+    double ArmMotorMultiplier = .5;             // The multiplier that varies the robot's max speed
+    static final boolean DEBUG = true;           // Debug Trigger
+    static final double STOP_VALUE = 0.1;        // Value drive motors are sent when stopping
+    static final double ARM_SPEED_THREE = 0.7;   // Value arm motor is sent at highest speed
+    static final double ARM_SPEED_TWO = 0.5;     // Value arm motor is sent at medium speed
+    static final double ARM_SPEED_ONE = 0.3;     // Value arm motor is sent at lowest speed
+    static final double JOYSTICK_ZERO = .25;     // Highest value recognized as 0
+    static final double MAX_ARM_POSITION_SPEED_ONE = .5; //Highest y position at which the arm motor will move at its slowest speed 
+    static final double MAX_ARM_POSITION_SPEED_TWO = .85; // Highest y position at which the arm motor will move at its medium speed
+    static final double MAX_ARM_POSITION_SPEED_THREE = 1.0; //Highest y position at which the arm motor will move at its highest speed
+    static boolean solenoidFlag=false;          // A flag to make sure the claw doesn't close when it's closed and vice versa
+    static boolean buttonPressable=true;        // A flag to prevent holding a switch acting like multiple presses
     
     // Drive mode selection
     int theDriveMode;                           // The actual drive mode that is currently selected.
@@ -44,6 +54,7 @@ public class TPARobot extends IterativeRobot {
     static final int ARCADE_DRIVE = 1;          // Value when arcade mode is selected 
     static final int TANK_DRIVE = 2;            // Value when tank drive is selected
     public double theMaxSpeed;           // Multiplier for speed, determined by Z-Axis on left stick
+    
     
     /*--------------------------------------------------------------------------*/
     /*
@@ -99,14 +110,23 @@ public class TPARobot extends IterativeRobot {
             System.out.println("The arm motor constructed successfully");
         }
 
-        if (DEBUG == true){
-	System.out.println("RobotInit() completed.\n");
-        }
         
+        // Initialize the claw opener/closer in ports 1 and 2
         theClawSolenoidOpen = new Solenoid (1);
         theClawSolenoidClose = new Solenoid (2);
          if (DEBUG == true){
 	System.out.println("The Solenoids constructed succesfully.\n");
+        }
+        
+         //Initialize the compressor in ports 6 and 6
+        theCompressor = new Compressor (6,6);
+        if (DEBUG == true){
+            System.out.println("The Compressor constructed successfully");
+        }
+        theCompressor.start(); //Instantly turn the compressor on
+        
+        if (DEBUG == true){
+	System.out.println("RobotInit() completed.\n");
         }
     }
 
@@ -163,7 +183,7 @@ public class TPARobot extends IterativeRobot {
         solenoidTrigger(theLeftStick);
         if (DEBUG == true) {
             System.out.println("solenoidTrigger called");
-        }
+        } 
     }
    
     /*--------------------------------------------------------------------------*/
@@ -348,11 +368,12 @@ public class TPARobot extends IterativeRobot {
    
     /*
      * Author:  Marissa Beene
-     * Date:    11/19/11
+     * Date:    11/19/11 (Marissa Beene), 12/14/11 (Sumbhav Sethia)
      * Purpose: To move the arm with a motor. When the joystick is pushed forward, 
      *          the motor will run at ARM_SPEED. When the joystick is pulled backward,
      *          the motor will run in the other direction. If tank drive is currently
-     *          in use, the arm will be deactivated.
+     *          in use, the arm will be deactivated. There is now a gradient, with
+     *          3 levels, as well as a changeable multiplier.
      * Inputs:  None
      * Outputs: None
      */
@@ -367,19 +388,47 @@ public class TPARobot extends IterativeRobot {
         }
         else if (theDriveMode != TANK_DRIVE){
             // if joystick pushed forward, run the motor forward
-            if (theLeftStick.getY() > JOYSTICK_ZERO){ 
+            if (theLeftStick.getY() > (JOYSTICK_ZERO) && theLeftStick.getY() <= (MAX_ARM_POSITION_SPEED_ONE)){ 
                 if(DEBUG == true) {
-                    System.out.println("Arm Motor, forward");
+                    System.out.println("Arm Motor, forward speed 1");
                 }
-                theArmMotor.set (ARM_SPEED);
+                theArmMotor.set (ARM_SPEED_ONE * ArmMotorMultiplier);
             }
             
             // if joystick pushed backward, run the motor backward
-            if (theLeftStick.getY() < -JOYSTICK_ZERO){ 
+            if (theLeftStick.getY() < -(JOYSTICK_ZERO) && theLeftStick.getY() > -(MAX_ARM_POSITION_SPEED_ONE)) {
                 if(DEBUG == true) {
-                    System.out.println("Arm Motor, reverse");
+                    System.out.println("Arm Motor, reverse speed 1");
                 }
-                theArmMotor.set (-ARM_SPEED);
+                theArmMotor.set (-ARM_SPEED_ONE * ArmMotorMultiplier);
+            }
+            if(theLeftStick.getY() > (MAX_ARM_POSITION_SPEED_ONE) && theLeftStick.getY() <= (MAX_ARM_POSITION_SPEED_TWO)){ 
+                if(DEBUG == true) {
+                    System.out.println("Arm Motor, forward speed 2");
+                }
+                theArmMotor.set (ARM_SPEED_TWO * ArmMotorMultiplier);
+            }
+            
+            // if joystick pushed backward, run the motor backward
+            if (theLeftStick.getY() < -(MAX_ARM_POSITION_SPEED_ONE) && theLeftStick.getY() >= -(MAX_ARM_POSITION_SPEED_TWO)) {
+                if(DEBUG == true) {
+                    System.out.println("Arm Motor, reverse speed 2");
+                }
+                theArmMotor.set (-ARM_SPEED_TWO * ArmMotorMultiplier);
+            }
+            if (theLeftStick.getY() > (MAX_ARM_POSITION_SPEED_TWO) && theLeftStick.getY() <= (MAX_ARM_POSITION_SPEED_THREE)){ 
+                if(DEBUG == true) {
+                    System.out.println("Arm Motor, forward speed 3");
+                }
+                theArmMotor.set (ARM_SPEED_THREE * ArmMotorMultiplier);
+            }
+            
+            // if joystick pushed backward, run the motor backward
+            if (theLeftStick.getY() < -(MAX_ARM_POSITION_SPEED_TWO) && theLeftStick.getY() >= -(MAX_ARM_POSITION_SPEED_THREE)) {
+                if(DEBUG == true) {
+                    System.out.println("Arm Motor, reverse speed 3");
+                }
+                theArmMotor.set (-ARM_SPEED_THREE * ArmMotorMultiplier);
             }
             
             // if joystick not moved, don't run motor
@@ -395,25 +444,34 @@ public class TPARobot extends IterativeRobot {
     
     /*--------------------------------------------------------------------------*/
     /*
-     * Author:  Gennaro De Luca
-     * Date:    12/03/2011 (Gennaro De Luca)
-     * Purpose: Make the trigger on the joystick turn the solenoid on and off.
-     * Inputs:  Joystick aStick - the right joystick
+     * Author:  Marissa Beene, Gennaro De Luca and Sumbhav Sethia
+     * Date:    12/03/2011 (Everyone), 12/14/2011 (Gennaro De Luca)
+     * Purpose: Make the trigger on the joystick turn the solenoid on and off when
+     *          pressed (one click open, next click close).
+     * Inputs:  Joystick aStick - the left joystick
      * Outputs: None
      */    
     
-    public void solenoidTrigger(Joystick aStick){
-       
-        if(aStick.getRawButton(1)) {
-            theClawSolenoidOpen.set(true);
+        public void solenoidTrigger(Joystick aStick){
+        
+        if(aStick.getRawButton(1) & buttonPressable) {
+            if(!solenoidFlag) {             // Open the claw if you press the button once
+            theClawSolenoidOpen.set(true);  
             theClawSolenoidClose.set(false);
-        }
-            else { 
+            solenoidFlag=true;
+            }
+            else if(solenoidFlag) {         // Close the claw if you press the button again
             theClawSolenoidClose.set(true);
             theClawSolenoidOpen.set(false);
+            solenoidFlag=false;
+            }
+            buttonPressable=false;
         }
-        
+        if(!aStick.getRawButton(1)) {
+            buttonPressable=true;           //Prevent a loop of opening/closing from happening
+        }
         
         
     }
+    
 }
